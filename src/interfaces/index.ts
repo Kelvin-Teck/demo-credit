@@ -1,15 +1,15 @@
-export interface UserData {
+export interface IUserData {
   id?: number;
-  first_name: string;
-  last_name: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  phone_number: string;
+  phoneNumber: string;
   password: string;
   address?: string;
-  date_of_birth?: Date;
-  id_number?: string;
-  verification_status?: string;
-  is_active?: boolean;
+  dateOfBirth?: Date;
+  idNumber?: string;
+  verificationStatus?: string;
+  isActive?: boolean;
   created_at?: Date;
   updated_at?: Date;
 }

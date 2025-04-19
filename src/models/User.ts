@@ -1,9 +1,8 @@
 // src/models/User.ts
-import { BaseModel }  from './BaseModel'
+import { BaseModel } from "./BaseModel";
 import knex from "../database/connection";
 import bcrypt from "bcrypt";
-import { UserData } from "../interfaces";
-
+import { IUserData } from "../interfaces";
 
 class User extends BaseModel {
   protected static tableName = "users";
@@ -13,22 +12,22 @@ class User extends BaseModel {
     return knex(this.tableName).where({ email }).first();
   }
 
-  // Create a user w
-  static async create(userData: UserData) {
-    // Hash the password before storing
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
+  // Create a user 
+  static async create(userData: IUserData, trx?:any) {
+    // Use the transaction if provided
+    const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
 
-    // Create user with hashed password
-    const [id] = await knex(this.tableName)
-      .insert({
-        ...userData,
-        password: hashedPassword,
-      })
-      .returning("id");
+    // Create user with hashed password (assuming password is already hashed)
+    const [user] = await queryBuilder.insert({ ...userData }).returning("*");
 
     // Return user without password
-    const user = await this.findById(id);
-    delete user.password;
+    // return this.findById(id, trx);
+    // const [user] = await knex(this.tableName)
+    //   .insert({
+    //     ...userData,
+    //   })
+    //   .returning("*");
+
     return user;
   }
 

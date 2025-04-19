@@ -6,10 +6,10 @@ export abstract class BaseModel {
   protected static tableName: string;
 
   // Basic CRUD operations
-  static async findById(id: number) {
-    return knex(this.tableName).where({ id }).first();
+  static async findById(id: number, trx?: any) {
+    const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
+    return queryBuilder.where({ id }).first();
   }
-
   static async findOne(filter: object) {
     return knex(this.tableName).where(filter).first();
   }
@@ -18,9 +18,10 @@ export abstract class BaseModel {
     return knex(this.tableName).where(filter);
   }
 
-  static async create(data: object) {
-    const [id] = await knex(this.tableName).insert(data).returning("id");
-    return this.findById(id);
+  static async create(data: object, trx?: any) {
+    const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
+    const [id] = await queryBuilder.insert(data).returning("id");
+    return this.findById(id, trx);
   }
 
   static async update(id: number, data: object) {

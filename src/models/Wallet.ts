@@ -4,7 +4,6 @@ import knex from "../database/connection";
 import { v4 as uuidv4 } from "uuid";
 import { WalletData } from "../interfaces";
 
-
 class Wallet extends BaseModel {
   protected static tableName = "wallets";
 
@@ -14,17 +13,23 @@ class Wallet extends BaseModel {
   }
 
   // Create wallet with generated wallet number
-  static async create(walletData: WalletData) {
-    const wallet = {
-      ...walletData,
-      wallet_number: walletData.wallet_number || this.generateWalletNumber(),
-      balance: walletData.balance || 0,
-      currency: walletData.currency || "NGN",
-      status: walletData.status || "active",
-    };
-
-    const [id] = await knex(this.tableName).insert(wallet).returning("id");
-    return this.findById(id);
+  static async create(walletData: WalletData, trx?: any) {
+    try {
+      const wallet = {
+        ...walletData,
+        wallet_number: walletData.wallet_number || this.generateWalletNumber(),
+        balance: walletData.balance || 0,
+        currency: walletData.currency || "NGN",
+        status: walletData.status || "active",
+      };
+      const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
+      const [walletInserted] = await queryBuilder.insert(wallet).returning("*");
+      
+      return walletInserted;
+    } catch (error) {
+      console.error("Error creating wallet:", error);
+      throw new Error("Failed to create wallet");
+    }
   }
 
   // Get wallet by user id
