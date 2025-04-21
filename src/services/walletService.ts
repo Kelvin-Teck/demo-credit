@@ -72,7 +72,14 @@ export const fundWallet = async (req: Request) => {
           convertToSnakeCase(transactionData),
           trx
         );
-
+        const formattedTransaction = {
+          ...updatedTransaction,
+          amount: parseFloat(updatedTransaction.amount),
+        };
+        const formattedCurrentWallet = {
+          ...currentWallet,
+          balance: currentWallet.balance,
+        };
         // Send Email Notification
         const emailData = {
           to: user.email,
@@ -80,17 +87,17 @@ export const fundWallet = async (req: Request) => {
           template: "fundWallet",
           context: {
             firstName: user.first_name,
-            transactionRef: updatedTransaction.reference,
-            newBalance: currentWallet.balance,
-            amount: updatedTransaction.amount,
+            transactionRef: formattedTransaction.reference,
+            newBalance: formattedCurrentWallet.balance,
+            amount: formattedTransaction.amount,
             dashboardLink: "https://demo-credit/dashboard",
           },
         };
         await sendMail(emailData);
 
         return {
-          transaction: updatedTransaction,
-          wallet: currentWallet,
+          transaction: formattedTransaction,
+          wallet:formattedCurrentWallet,
         };
       } catch (error) {
         const errorMessage =
@@ -182,6 +189,10 @@ export const transferFunds = async (req: Request) => {
         trx
       );
 
+      const formattedTransaction = {
+        ...updatedTransaction,
+        amount: parseFloat(updatedTransaction.amount),
+      };
       // Return updated sender wallet and transaction
       const updatedSenderWallet = await Wallet.findById(senderWallet.id, trx);
       // Send Email Notification
@@ -194,9 +205,9 @@ export const transferFunds = async (req: Request) => {
         template: "fundTransfer",
         context: {
           firstName: user.first_name,
-          transactionRef: updatedTransaction.reference,
+          transactionRef: formattedTransaction.reference,
           newBalance: updatedSenderWallet.balance,
-          amount: updatedTransaction.amount,
+          amount: formattedTransaction.amount,
           recipientName: `${recipientInfo.first_name} ${recipientInfo.last_name}`,
           recipientEmail: recipientInfo.email,
           dashboardLink: "https://demo-credit/transactions",
@@ -209,8 +220,8 @@ export const transferFunds = async (req: Request) => {
         status: "success",
         message: "Transfer successful",
         data: {
-          transaction: updatedTransaction,
-          balance: updatedSenderWallet.balance,
+          transaction: formattedTransaction,
+          balance: parseFloat(updatedSenderWallet.balance),
         },
       };
     });
@@ -289,15 +300,20 @@ export const withdrawFunds = async (req: Request) => {
           trx
         );
 
+        const formattedTransaction = {
+          ...updatedTransaction,
+          amount: parseFloat(updatedTransaction.amount),
+        };
+
         const emailData = {
           to: user.email,
           subject: "Withdrawal Notification",
           template: "fundWithdrawal",
           context: {
             firstName: user.first_name,
-            transactionRef: updatedTransaction.reference,
+            transactionRef: formattedTransaction.reference,
             newBalance: currentWallet.balance,
-            amount: updatedTransaction.amount,
+            amount: formattedTransaction.amount,
             dashboardLink: "https://demo-credit/transactions",
           },
         };
@@ -305,8 +321,8 @@ export const withdrawFunds = async (req: Request) => {
         await sendMail(emailData);
 
         return {
-          transaction: updatedTransaction,
-          newBalance: currentWallet.balance,
+          transaction: formattedTransaction,
+          newBalance: parseFloat(currentWallet.balance),
         };
       } catch (error) {
         const errorMessage =
