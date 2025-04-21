@@ -3,6 +3,29 @@ import { Request, Response, NextFunction, RequestHandler } from "express";
 import FauxAuthService from "../services/fauxAuthService";
 import { IAuthUser } from "../interfaces";
 import { newError } from "../utils/apiResponse";
+import rateLimit from 'express-rate-limit'
+
+// Function to create and return a rate limiter middleware
+export const createRateLimiter = (
+  maxRequests: number,
+  windowMinutes: number
+) => {
+  return rateLimit({
+    windowMs: windowMinutes * 60 * 1000, // windowMinutes in milliseconds
+    max: maxRequests, // limit each IP to maxRequests per windowMs
+    message: {
+      status: 429, // Too Many Requests
+      message: "Too many login attempts, please try again later.",
+    },
+    handler: (req: Request, res: Response, next: NextFunction) => {
+      res.status(429).json({
+        error: "Too many login attempts. Please try again later.",
+      });
+    },
+  });
+};
+
+
 
 export const fauxAuth = (requiredRole?: string) : RequestHandler=> {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -36,3 +59,5 @@ export const fauxAuth = (requiredRole?: string) : RequestHandler=> {
     }
   };
 };
+
+

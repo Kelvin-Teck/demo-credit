@@ -129,3 +129,10 @@ export interface IWithdraw {
   paymentMethod: string;
   bankDetails: {}
 }
+
+export interface IMailData<T> {
+  to: string;
+  subject: string;
+  template: string;
+  context: T;
+}

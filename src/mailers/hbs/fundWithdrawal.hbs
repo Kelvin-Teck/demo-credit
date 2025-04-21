@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Wallet Withdrawal Successful</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      padding: 20px;
+      color: #333;
+    }
+    .container {
+      background-color: #ffffff;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 12px 20px;
+      background-color: #e74c3c;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+    }
+    .footer {
+      font-size: 12px;
+      color: #888;
+      margin-top: 40px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>💸 Withdrawal Successful</h2>
+    <p>Hi {{firstName}},</p>
+
+    <p>You have successfully withdrawn <strong>₦{{amount}}</strong> from your wallet.</p>
+
+    <p>Transaction Reference: <strong>{{transactionRef}}</strong></p>
+    <p>New Wallet Balance: <strong>₦{{newBalance}}</strong></p>
+
+    <p>If this wasn't you, please report the issue immediately.</p>
+
+    <a href="{{dashboardLink}}" class="btn">View Wallet</a>
+
+    <p class="footer">Thank you for using Demo Credit.</p>
+  </div>
+</body>
+</html>

@@ -1,6 +1,6 @@
 import express from 'express'
 import * as WalletController from '../controllers/walletController'
-import { fauxAuth } from '../middlewares/faux'
+import { fauxAuth } from '../middlewares/auth'
 const router = express.Router()
 
 

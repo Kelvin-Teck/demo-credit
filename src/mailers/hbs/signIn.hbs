@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Login Alert</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      color: #333;
+      padding: 20px;
+    }
+
+    .container {
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 30px;
+      max-width: 600px;
+      margin: auto;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+
+    .footer {
+      margin-top: 30px;
+      font-size: 12px;
+      color: #888;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Hello, {{firstName}} 👋</h2>
+    <p>We noticed a new login to your <strong>Demo Credit</strong> account.</p>
+
+    <p>If this was you, you can safely ignore this message.</p>
+    <p>If not, we recommend resetting your password immediately.</p>
+
+    <a href="{{securityLink}}" class="btn">Review Account</a>
+
+    <p class="footer">Login time: {{loginTime}}</p>
+    <p class="footer">IP Address: {{ipAddress}}</p>
+  </div>
+</body>
+</html>

@@ -8,6 +8,7 @@ import Wallet from "../models/Wallet";
 import knex from "../database/connection";
 import adjutorClient from "../config/axios";
 import fauxAuthService from "./fauxAuthService";
+import { sendMail } from "../mailers";
 
 export const createUser = async (req: Request) => {
   const {
@@ -99,6 +100,18 @@ export const createUser = async (req: Request) => {
       });
 
       await Wallet.create(walletData, trx);
+
+      // Send email Notification
+      const emailData = {
+        to: newUser.email,
+        subject: "Demo Credit Account Creation",
+        template: "createAccount",
+        context: {
+          firstName: newUser.first_name,
+          loginLink: "https://localhost:1000/user/login",
+        },
+      };
+      await sendMail(emailData);
     } catch (error) {
       console.log(error);
       return newError("Failed to Create User", 403);
@@ -124,9 +137,26 @@ export const login = async (req: Request) => {
     return newError("Incorrect Password...Try Again", 403);
   }
 
-  const { password: pass, ...safeUser } = findUser;
-  
+  const { password: pass, ...safeUser } = findUser; //get user without password
+
   const token = fauxAuthService.generateToken(undefined, safeUser);
 
+  // Send email Notification
+  const ipAddress =
+    (req.headers["x-forwarded-for"] as string)?.split(",")[0] ||
+    req.socket.remoteAddress;
+
+  const emailData = {
+    to: safeUser.email,
+    subject: "Sign In Notification",
+    template: "signIn",
+    context: {
+      firstName: safeUser.first_name,
+      loginTime: new Date().toISOString(),
+      securityLink: "https://demo-credit/security",
+      ipAddress,
+    },
+  };
+  await sendMail(emailData);
   return { token };
 };

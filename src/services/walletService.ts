@@ -8,6 +8,7 @@ import { convertToSnakeCase } from "../utils/caseConverter";
 import { Request } from "express";
 import { IAuthUser, IUserData } from "../interfaces";
 import User from "../models/User";
+import { sendMail } from "../mailers";
 
 export const fundWallet = async (req: Request) => {
   try {
@@ -59,11 +60,7 @@ export const fundWallet = async (req: Request) => {
         );
 
         // Update wallet balance
-        const updatedWallet = await Wallet.updateBalance(
-          wallet.id,
-          amount,
-          trx
-        );
+        await Wallet.updateBalance(wallet.id, amount, trx);
 
         const currentWallet = await Wallet.findById(userId, trx);
 
@@ -75,6 +72,21 @@ export const fundWallet = async (req: Request) => {
           convertToSnakeCase(transactionData),
           trx
         );
+
+        // Send Email Notification
+        const emailData = {
+          to: user.email,
+          subject: "Fund Wallet",
+          template: "fundWallet",
+          context: {
+            firstName: user.first_name,
+            transactionRef: updatedTransaction.reference,
+            newBalance: currentWallet.balance,
+            amount: updatedTransaction.amount,
+            dashboardLink: "https://demo-credit/dashboard",
+          },
+        };
+        await sendMail(emailData);
 
         return {
           transaction: updatedTransaction,
@@ -172,6 +184,26 @@ export const transferFunds = async (req: Request) => {
 
       // Return updated sender wallet and transaction
       const updatedSenderWallet = await Wallet.findById(senderWallet.id, trx);
+      // Send Email Notification
+      // get recipient Name
+      const recipientInfo = await User.findById(recipientWallet.user_id, trx);
+
+      const emailData = {
+        to: user.email,
+        subject: "Transfer Notification",
+        template: "fundTransfer",
+        context: {
+          firstName: user.first_name,
+          transactionRef: updatedTransaction.reference,
+          newBalance: updatedSenderWallet.balance,
+          amount: updatedTransaction.amount,
+          recipientName: `${recipientInfo.first_name} ${recipientInfo.last_name}`,
+          recipientEmail: recipientInfo.email,
+          dashboardLink: "https://demo-credit/transactions",
+        },
+      };
+
+      await sendMail(emailData);
 
       return {
         status: "success",
@@ -247,6 +279,7 @@ export const withdrawFunds = async (req: Request) => {
 
         /* Here you would typically integrate with a payment provider
          to process the actual withdrawal to the user's bank account*/
+        const currentWallet = await Wallet.findById(wallet.id, trx);
 
         // Update transaction status to completed
         const updatedTransaction = await Transaction.updateStatus(
@@ -255,7 +288,21 @@ export const withdrawFunds = async (req: Request) => {
           {},
           trx
         );
-        const currentWallet = await Wallet.findById(wallet.id, trx);
+
+        const emailData = {
+          to: user.email,
+          subject: "Withdrawal Notification",
+          template: "fundWithdrawal",
+          context: {
+            firstName: user.first_name,
+            transactionRef: updatedTransaction.reference,
+            newBalance: currentWallet.balance,
+            amount: updatedTransaction.amount,
+            dashboardLink: "https://demo-credit/transactions",
+          },
+        };
+
+        await sendMail(emailData);
 
         return {
           transaction: updatedTransaction,

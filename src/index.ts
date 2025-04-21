@@ -5,9 +5,9 @@ import { testConnection } from "./database";
 
 const PORT = process.env.PORT || 2000;
 
-const startApp = () => {
+const startApp = async () => {
+  await testConnection();
   app.listen(PORT, () => {
-    testConnection()
     console.log(`Server is running on http://localhost:${PORT}`);
   });
 };
