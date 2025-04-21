@@ -7,7 +7,7 @@ dotenv.config()
  */
 const config: { [key: string]: import("knex").Knex.Config } = {
   development: {
-    client: "pg",
+    client: "mysql",
     connection: {
       host: process.env.DB_HOST,
       port: parseInt(process.env.DB_PORT || "5432"),
@@ -18,7 +18,7 @@ const config: { [key: string]: import("knex").Knex.Config } = {
   },
 
   staging: {
-    client: "postgresql",
+    client: "mysql",
     connection: {
       database: "my_db",
       user: "username",
@@ -35,7 +35,7 @@ const config: { [key: string]: import("knex").Knex.Config } = {
   },
 
   production: {
-    client: "postgresql",
+    client: "mysql",
     connection: {
       database: "my_db",
       user: "username",
@@ -47,6 +47,7 @@ const config: { [key: string]: import("knex").Knex.Config } = {
     },
     migrations: {
       tableName: "knex_migrations",
+      directory: "./src/database/migrations"
     },
   },
 };

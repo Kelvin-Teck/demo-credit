@@ -30,10 +30,10 @@ class Transaction extends BaseModel {
       status: transactionData.status || "pending",
     };
 
-    const [insertedTransaction] = await queryBuilder
+    const [insertedId] = await queryBuilder
       .insert(transaction)
-      .returning("*");
-    return insertedTransaction;
+  
+    return this.findById(insertedId, trx);
   }
 
   // Get user transactions
@@ -65,13 +65,14 @@ class Transaction extends BaseModel {
     trx?: any
   ) {
     const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
+    
     await queryBuilder.where({ id }).update({
       status,
       ...updateData,
       updated_at: new Date(),
     });
 
-    console.log(id);
+    
     return this.findById(id, trx);
   }
 

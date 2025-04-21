@@ -6,5 +6,8 @@ const router = express.Router()
 
 
 router.post('/fund-wallet',[fauxAuth()], WalletController.fundWallet)
+router.post('/transfer', [fauxAuth()], WalletController.transferFunds)
+router.post('/withdraw', WalletController.withdrawFunds)
+
 
 export default router

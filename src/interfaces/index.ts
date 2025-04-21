@@ -116,3 +116,10 @@ export interface IFauxTokenData {
 export interface IAuthUser {
   [key: string]: any; // Additional user properties
 }
+
+
+export interface ITransfer {
+  recipientWalletNumber: string;
+  amount: number;
+  description: string;
+}

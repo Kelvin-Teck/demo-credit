@@ -45,9 +45,9 @@ export const fundWallet = async (req: Request) => {
         const transactionData = {
           userId: userId,
           walletId: wallet.id,
-          amount,
+          amount: value.amount,
           transactionType: "deposit",
-          paymentMethod,
+          paymentMethod: value.paymentMethod,
           paymentDetails,
           description: "Wallet funding",
         };
@@ -73,7 +73,6 @@ export const fundWallet = async (req: Request) => {
           trx
         );
 
-
         return {
           transaction: updatedTransaction,
           wallet: updatedWallet,
@@ -91,3 +90,100 @@ export const fundWallet = async (req: Request) => {
   }
 };
 
+export const transferFunds = async (req: Request) => {
+  try {
+    const { user } = req as Request & { user: IAuthUser }; // Get Authenticated user
+    const userId = user.id;
+    const { recipientWalletNumber, amount, description } = req.body;
+
+    // Validate input
+    const { error, value } = validator.validateTransfer({
+      recipientWalletNumber,
+      amount,
+      description,
+    });
+
+    if (error) {
+      const errorMessage = error.details.map((err) => err.message).join(", ");
+      return newError(errorMessage, 403);
+    }
+    // Begin Transaction
+    const result = await knex.transaction(async (trx) => {
+      // Get sender's wallet
+      const senderWallet = await Wallet.findByUserId(userId, trx);
+      if (!senderWallet) {
+        return newError("Sender's wallet not found", 404);
+      }
+
+      // Get recipient's wallet
+      const recipientWallet = await Wallet.findOne(
+        { wallet_number: value.recipientWalletNumber },
+        trx
+      );
+
+      if (!recipientWallet) {
+        return newError("Recipient wallet not found", 404);
+      }
+
+      // Check if sender is not transferring to self
+      if (senderWallet.id === recipientWallet.id) {
+        return newError("Cannot transfer to your own wallet", 404);
+      }
+
+      // Check if sender has sufficient funds
+      if (senderWallet.balance < value.amount) {
+        return newError("Insufficient funds", 402);
+      }
+
+      // Create transaction record
+      const transactionData = {
+        userId: userId,
+        walletId: senderWallet.id,
+        amount,
+        transactionType: "transfer",
+        status: "pending",
+        sourceWalletId: senderWallet.id,
+        destinationWalletId: recipientWallet.id,
+        description: value.description || "Transfer",
+      };
+
+      const transaction = await Transaction.create(
+        convertToSnakeCase(transactionData),
+        trx
+      );
+
+      // Update sender's wallet (deduct amount)
+      await Wallet.updateBalance(senderWallet.id, -amount, trx);
+
+      // Update recipient's wallet (add amount)
+      await Wallet.updateBalance(recipientWallet.id, amount, trx);
+
+      // Update transaction status to completed
+     const updatedTransaction =  await Transaction.updateStatus(transaction.id, "completed", {}, trx);
+
+      // Return updated sender wallet and transaction
+      const updatedSenderWallet = await Wallet.findById(senderWallet.id, trx);
+
+      return {
+        status: "success",
+        message: "Transfer successful",
+        data: {
+          transaction: updatedTransaction,
+          balance: updatedSenderWallet.balance,
+        },
+      };
+    });
+
+    return result;
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "an unknown error occured";
+    return newError(errorMessage, 500);
+  }
+};
+
+
+
+export const withdrawFunds = async (req: Request) => {
+  
+}

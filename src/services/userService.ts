@@ -92,6 +92,7 @@ export const createUser = async (req: Request) => {
 
       const newUser = await User.create(dataToCommit, trx);
 
+      console.log(newUser)
       // create wallet for user (with 0 balance)
       const walletData = convertToSnakeCase({
         userId: newUser.id,

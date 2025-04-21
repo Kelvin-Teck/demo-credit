@@ -3,6 +3,7 @@ import { BaseModel } from "./BaseModel";
 import knex from "../database/connection";
 import { v4 as uuidv4 } from "uuid";
 import { WalletData } from "../interfaces";
+import { newError } from "../utils/apiResponse";
 
 class Wallet extends BaseModel {
   protected static tableName = "wallets";
@@ -38,18 +39,22 @@ class Wallet extends BaseModel {
     return queryBuilder.where({ user_id: userId }).first();
   }
 
+  static async findOne(filter: object, trx?: any) {
+    const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
+    return queryBuilder.where(filter).first();
+  }
+
   // Update wallet balance
   static async updateBalance(id: number, amount: number, trx?: any) {
     const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
 
     const wallet = await this.findById(id);
-    if (!wallet) throw new Error("Wallet not found");
+    if (!wallet) return newError("Wallet not found", 404);
 
     const newBalance = parseFloat(wallet.balance) + amount;
 
     // Ensure balance doesn't go below 0
-    if (newBalance < 0) throw new Error("Insufficient funds");
-
+    if (newBalance < 0) return newError("Insufficient funds", 402);
 
     await queryBuilder.where({ id }).update({
       balance: newBalance,

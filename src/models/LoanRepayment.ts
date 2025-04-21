@@ -30,7 +30,7 @@ class LoanRepayment extends BaseModel {
       const repayment = {
         loan_id: loanId,
         amount: repaymentAmount,
-        due_date: dueDate,]
+        due_date: dueDate,
         status: "pending",
       };
 

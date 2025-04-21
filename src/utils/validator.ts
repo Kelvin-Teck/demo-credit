@@ -1,5 +1,5 @@
 import Joi from "joi";
-import { ITransactionData, IUserData, WalletData } from "../interfaces";
+import { ITransactionData, ITransfer, IUserData, WalletData } from "../interfaces";
 
 const userCreationSchema = Joi.object({
   firstName: Joi.string().min(2).max(50).required(),
@@ -45,8 +45,36 @@ const walletFundingSchema = Joi.object({
     }),
 });
 
-export const validateWalletFunding = (data:Partial<ITransactionData> ) => {
+export const validateWalletFunding = (data: Partial<ITransactionData>) => {
   const { error, value } = walletFundingSchema.validate(data, {
+    abortEarly: false,
+    allowUnknown: false,
+    stripUnknown: true,
+  });
+
+  return { error, value };
+};
+
+export const validateTransferSchema = Joi.object({
+  recipientWalletNumber: Joi.string()
+    .pattern(/^WAL-[A-Z0-9]{8}$/)
+    .required()
+    .messages({
+      "string.empty": "Recipient wallet number is required",
+      "any.required": "Recipient wallet number is required",
+      "any.pattern": "Wallet number must follow the pattern WAL-XXXXXXXX with uppercase letters and digits only"
+    }),
+  amount: Joi.number().positive().required().messages({
+    "number.base": "Amount must be a number",
+    "number.positive": "Amount must be positive",
+    "any.required": "Amount is required",
+  }),
+  description: Joi.string().optional(),
+});
+
+
+export const validateTransfer = (data: ITransfer) => {
+  const { error, value } = validateTransferSchema.validate(data, {
     abortEarly: false,
     allowUnknown: false,
     stripUnknown: true,
