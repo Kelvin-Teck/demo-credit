@@ -92,7 +92,6 @@ export const createUser = async (req: Request) => {
 
       const newUser = await User.create(dataToCommit, trx);
 
-      console.log(newUser)
       // create wallet for user (with 0 balance)
       const walletData = convertToSnakeCase({
         userId: newUser.id,
@@ -129,5 +128,5 @@ export const login = async (req: Request) => {
   
   const token = fauxAuthService.generateToken(undefined, safeUser);
 
-  return token;
+  return { token };
 };

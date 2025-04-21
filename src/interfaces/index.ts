@@ -123,3 +123,9 @@ export interface ITransfer {
   amount: number;
   description: string;
 }
+
+export interface IWithdraw {
+  amount: number;
+  paymentMethod: string;
+  bankDetails: {}
+}

@@ -1,5 +1,5 @@
 import Joi from "joi";
-import { ITransactionData, ITransfer, IUserData, WalletData } from "../interfaces";
+import { ITransactionData, ITransfer, IUserData, IWithdraw, WalletData } from "../interfaces";
 
 const userCreationSchema = Joi.object({
   firstName: Joi.string().min(2).max(50).required(),
@@ -82,3 +82,39 @@ export const validateTransfer = (data: ITransfer) => {
 
   return { error, value };
 };
+
+
+
+  const validateWithdrawalSchema = Joi.object({
+    amount: Joi.number().positive().required().messages({
+      'number.base': 'Amount must be a number',
+      'number.positive': 'Amount must be positive',
+      'any.required': 'Amount is required'
+    }),
+    paymentMethod: Joi.string().valid('bank_transfer', 'card', 'mobile_money').required().messages({
+      'string.base': 'Payment method must be a string',
+      'any.only': 'Payment method must be bank_transfer, card, or mobile_money',
+      'any.required': 'Payment method is required'
+    }),
+    bankDetails: Joi.object({
+      bankName: Joi.string().required(),
+      accountNumber: Joi.string().required(),
+      accountName: Joi.string().required()
+    }).required().messages({
+      'object.base': 'Bank details must be an object',
+      'any.required': 'Bank details are required'
+    })
+  });
+
+
+  export const validateWithdrawal = (data: IWithdraw) => {
+    const { error, value } = validateWithdrawalSchema.validate(data, {
+      abortEarly: false,
+      allowUnknown: false,
+      stripUnknown: true,
+    });
+
+    return { error, value };
+  };
+
+

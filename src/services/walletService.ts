@@ -7,6 +7,7 @@ import * as validator from "../utils/validator";
 import { convertToSnakeCase } from "../utils/caseConverter";
 import { Request } from "express";
 import { IAuthUser, IUserData } from "../interfaces";
+import User from "../models/User";
 
 export const fundWallet = async (req: Request) => {
   try {
@@ -64,6 +65,8 @@ export const fundWallet = async (req: Request) => {
           trx
         );
 
+        const currentWallet = await Wallet.findById(userId, trx);
+
         // Update Transaction Status to "completed"
 
         const updatedTransaction = await Transaction.updateStatus(
@@ -75,7 +78,7 @@ export const fundWallet = async (req: Request) => {
 
         return {
           transaction: updatedTransaction,
-          wallet: updatedWallet,
+          wallet: currentWallet,
         };
       } catch (error) {
         const errorMessage =
@@ -107,6 +110,7 @@ export const transferFunds = async (req: Request) => {
       const errorMessage = error.details.map((err) => err.message).join(", ");
       return newError(errorMessage, 403);
     }
+
     // Begin Transaction
     const result = await knex.transaction(async (trx) => {
       // Get sender's wallet
@@ -159,7 +163,12 @@ export const transferFunds = async (req: Request) => {
       await Wallet.updateBalance(recipientWallet.id, amount, trx);
 
       // Update transaction status to completed
-     const updatedTransaction =  await Transaction.updateStatus(transaction.id, "completed", {}, trx);
+      const updatedTransaction = await Transaction.updateStatus(
+        transaction.id,
+        "completed",
+        {},
+        trx
+      );
 
       // Return updated sender wallet and transaction
       const updatedSenderWallet = await Wallet.findById(senderWallet.id, trx);
@@ -182,8 +191,85 @@ export const transferFunds = async (req: Request) => {
   }
 };
 
-
-
 export const withdrawFunds = async (req: Request) => {
-  
-}
+  try {
+    const { user } = req as Request & { user: IAuthUser }; // Get Authenticated
+    const userId = user.id;
+    const { amount, paymentMethod, bankDetails } = req.body;
+    // Validate input
+    const { error, value } = validator.validateWithdrawal({
+      amount,
+      paymentMethod,
+      bankDetails,
+    });
+
+    if (error) {
+      const errorMessage = error.details.map((err) => err.message).join(", ");
+      return newError(errorMessage, 403);
+    }
+
+    // Check if user exists
+    const findUser = await User.findById(userId);
+    if (!findUser) {
+      return newError("User Not Found", 404);
+    }
+
+    // Get user's wallet
+    const wallet = await Wallet.findByUserId(userId);
+    if (!wallet) {
+      return newError("Wallet Not Found", 404);
+    }
+
+    // Check if wallet has sufficient balance
+    if (wallet.balance < amount) {
+      return newError("Insufficient funds in wallet", 402);
+    }
+
+    // Begin transaction
+    return await knex.transaction(async (trx) => {
+      try {
+        // Create transaction record
+        const transactionData = convertToSnakeCase({
+          userId,
+          walletId: wallet.id,
+          amount,
+          transactionType: "withdrawal",
+          status: "pending",
+          paymentMethod: value.paymentMethod,
+          paymentDetails: value.bankDetails,
+          description: `Withdrawal of ${amount} from wallet`,
+        });
+
+        const transaction = await Transaction.create(transactionData, trx);
+
+        // Update wallet balance
+        await Wallet.updateBalance(wallet.id, -amount, trx);
+
+        /* Here you would typically integrate with a payment provider
+         to process the actual withdrawal to the user's bank account*/
+
+        // Update transaction status to completed
+        const updatedTransaction = await Transaction.updateStatus(
+          transaction.id,
+          "completed",
+          {},
+          trx
+        );
+        const currentWallet = await Wallet.findById(wallet.id, trx);
+
+        return {
+          transaction: updatedTransaction,
+          newBalance: currentWallet.balance,
+        };
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "an unknown error occured";
+        return newError(errorMessage, 500);
+      }
+    });
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "an unknown error occured";
+    return newError(errorMessage, 500);
+  }
+};

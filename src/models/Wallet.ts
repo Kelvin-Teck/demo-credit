@@ -56,12 +56,20 @@ class Wallet extends BaseModel {
     // Ensure balance doesn't go below 0
     if (newBalance < 0) return newError("Insufficient funds", 402);
 
+    // await queryBuilder.where({ id }).update({
+    //   balance: newBalance,
+    //   updated_at: new Date(),
+    // });
+    // Perform the update and return the updated record in one query (MySQL supported)
     await queryBuilder.where({ id }).update({
       balance: newBalance,
-      updated_at: new Date(),
+      updated_at: knex.fn.now(), // Use knex's now() for database-agnostic timestamps
     });
 
-    return this.findById(id);
+    const updatedWallet = await this.findById(id);
+
+    return updatedWallet;
+    // Fetch the updated wallet
   }
 }
 
