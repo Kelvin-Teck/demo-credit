@@ -10,8 +10,8 @@ export interface IUserData {
   idNumber?: string;
   verificationStatus?: string;
   isActive?: boolean;
-  created_at?: Date;
-  updated_at?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface WalletData {
@@ -47,23 +47,23 @@ export interface LoanData {
   updated_at?: Date;
 }
 
-export interface TransactionData {
+export interface ITransactionData {
   id?: number;
-  user_id: number;
-  wallet_id: number;
+  userId: number;
+  walletId: number;
   reference?: string;
   amount: number;
-  transaction_type: string;
+  transactionType: string;
   status?: string;
-  source_wallet_id?: number;
-  destination_wallet_id?: number;
-  loan_id?: number;
-  payment_method?: string;
-  payment_details?: object;
+  sourceWalletId?: number;
+  destinationWalletId?: number;
+  loanId?: number;
+  paymentMethod?: string;
+  paymentDetails?: object;
   description?: string;
-  failure_reason?: string;
-  created_at?: Date;
-  updated_at?: Date;
+  failureReason?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface RepaymentData {
@@ -103,4 +103,16 @@ export interface AuditLogData {
   description?: string;
   metadata?: Record<string, any>; // optional JSON field
   created_at?: string;
+}
+
+
+// types/auth.ts
+export interface IFauxTokenData {
+  expiresAt: number;
+  role?: string;
+  [key: string]: any; // Additional custom properties
+}
+
+export interface IAuthUser {
+  [key: string]: any; // Additional user properties
 }

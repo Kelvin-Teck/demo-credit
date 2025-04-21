@@ -1,6 +1,5 @@
-
 import Joi from "joi";
-import { IUserData } from "../interfaces";
+import { ITransactionData, IUserData, WalletData } from "../interfaces";
 
 const userCreationSchema = Joi.object({
   firstName: Joi.string().min(2).max(50).required(),
@@ -19,7 +18,7 @@ const userCreationSchema = Joi.object({
   isActive: Joi.boolean().optional(),
 });
 
-export const validateUserCreation = (data: IUserData) =>  {
+export const validateUserCreation = (data: IUserData) => {
   const { error, value } = userCreationSchema.validate(data, {
     abortEarly: false,
     allowUnknown: false,
@@ -27,4 +26,31 @@ export const validateUserCreation = (data: IUserData) =>  {
   });
 
   return { error, value };
-}
+};
+
+const walletFundingSchema = Joi.object({
+  amount: Joi.number().positive().required().messages({
+    "number.base": "Amount must be a number",
+    "number.positive": "Amount must be positive",
+    "any.required": "Amount is required",
+  }),
+  paymentMethod: Joi.string()
+    .valid("card", "bank_transfer", "ussd", "wallet")
+    .required()
+    .messages({
+      "string.base": "Payment method must be a string",
+      "any.only":
+        "Payment method must be one of: card, bank_transfer, ussd, wallet",
+      "any.required": "Payment method is required",
+    }),
+});
+
+export const validateWalletFunding = (data:Partial<ITransactionData> ) => {
+  const { error, value } = walletFundingSchema.validate(data, {
+    abortEarly: false,
+    allowUnknown: false,
+    stripUnknown: true,
+  });
+
+  return { error, value };
+};

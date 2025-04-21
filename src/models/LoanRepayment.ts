@@ -14,14 +14,14 @@ class LoanRepayment extends BaseModel {
   }
 
   // Create scheduled repayments for a loan
-  static async createScheduledRepayments(
+  static async createScheduledRepayments <T>(
     loanId: number,
     totalAmount: number,
     tenure: number,
     startDate: Date
-  ) {
+  ) : Promise<T[]>{
     const repaymentAmount = totalAmount / tenure;
-    const repayments = [];
+    const repayments: T[] = [];
 
     for (let i = 0; i < tenure; i++) {
       const dueDate = new Date(startDate);
@@ -30,7 +30,7 @@ class LoanRepayment extends BaseModel {
       const repayment = {
         loan_id: loanId,
         amount: repaymentAmount,
-        due_date: dueDate,
+        due_date: dueDate,]
         status: "pending",
       };
 

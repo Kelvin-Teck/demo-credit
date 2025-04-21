@@ -6,7 +6,7 @@ const adjutorClient = axios.create({
   timeout: 10000, // 10 seconds timeout
   headers: {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${process.env.ADJUTOR_API_KEY}`, // if needed
+    Authorization: `Bearer ${process.env.ADJUTOR_API_KEY}`,
   },
 });
 

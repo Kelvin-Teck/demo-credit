@@ -6,6 +6,8 @@ import * as helpers from "../utils/helpers";
 import { convertToSnakeCase } from "../utils/caseConverter";
 import Wallet from "../models/Wallet";
 import knex from "../database/connection";
+import adjutorClient from "../config/axios";
+import fauxAuthService from "./fauxAuthService";
 
 export const createUser = async (req: Request) => {
   const {
@@ -57,8 +59,20 @@ export const createUser = async (req: Request) => {
     return newError("A User Exists with email", 403);
   }
 
+  const isPhoneNumberExist = await User.findByPhoneNumber(
+    validatedUserInput.phoneNumber
+  );
+
+  if (isPhoneNumberExist) {
+    return newError("A User with this phone number already exist", 403);
+  }
+
   // check if user is blacklisted
-  
+  const isBlacklisted = await adjutorClient.get(
+    `/verification/karma/${validatedUserInput.email}`
+  );
+
+  console.log(isBlacklisted.data);
 
   /* Begin Transaction */
   return await knex.transaction(async (trx) => {
@@ -67,7 +81,7 @@ export const createUser = async (req: Request) => {
       const hashPassword = await helpers.hashPassword(
         validatedUserInput.password
       );
-      
+
       //  commit user into the user Table
       /* mapping to camelCase for storing in the db */
 
@@ -77,16 +91,42 @@ export const createUser = async (req: Request) => {
       });
 
       const newUser = await User.create(dataToCommit, trx);
-      
+
       // create wallet for user (with 0 balance)
       const walletData = convertToSnakeCase({
         userId: newUser.id,
         balance: 0,
       });
-      
+
       await Wallet.create(walletData, trx);
     } catch (error) {
-        return newError("Failed to Create User", 403)
+      console.log(error);
+      return newError("Failed to Create User", 403);
     }
   });
+};
+
+export const login = async (req: Request) => {
+  const { email, password } = req.body;
+
+  const findUser = await User.findByEmail(email);
+
+  if (!findUser) {
+    return newError("Incorrect Credentials...Try again", 401);
+  }
+
+  const checkPassword = await helpers.comparePassword(
+    password,
+    findUser.password
+  );
+
+  if (!checkPassword) {
+    return newError("Incorrect Password...Try Again", 403);
+  }
+
+  const { password: pass, ...safeUser } = findUser;
+  
+  const token = fauxAuthService.generateToken(undefined, safeUser);
+
+  return token;
 };

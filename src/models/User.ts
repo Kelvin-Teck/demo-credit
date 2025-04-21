@@ -12,8 +12,13 @@ class User extends BaseModel {
     return knex(this.tableName).where({ email }).first();
   }
 
-  // Create a user 
-  static async create(userData: IUserData, trx?:any) {
+  // Find user by phone number
+  static async findByPhoneNumber(phone_number: string) {
+    return knex(this.tableName).where({ phone_number }).first();
+  }
+
+  // Create a user
+  static async create(userData: IUserData, trx?: any) {
     // Use the transaction if provided
     const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
 

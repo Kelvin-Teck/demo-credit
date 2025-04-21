@@ -24,7 +24,7 @@ class Wallet extends BaseModel {
       };
       const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
       const [walletInserted] = await queryBuilder.insert(wallet).returning("*");
-      
+
       return walletInserted;
     } catch (error) {
       console.error("Error creating wallet:", error);
@@ -33,21 +33,25 @@ class Wallet extends BaseModel {
   }
 
   // Get wallet by user id
-  static async findByUserId(userId: number) {
-    return knex(this.tableName).where({ user_id: userId }).first();
+  static async findByUserId(userId: number, trx?: any) {
+    const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
+    return queryBuilder.where({ user_id: userId }).first();
   }
 
   // Update wallet balance
-  static async updateBalance(id: number, amount: number) {
+  static async updateBalance(id: number, amount: number, trx?: any) {
+    const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
+
     const wallet = await this.findById(id);
     if (!wallet) throw new Error("Wallet not found");
 
-    const newBalance = wallet.balance + amount;
+    const newBalance = parseFloat(wallet.balance) + amount;
 
     // Ensure balance doesn't go below 0
     if (newBalance < 0) throw new Error("Insufficient funds");
 
-    await knex(this.tableName).where({ id }).update({
+
+    await queryBuilder.where({ id }).update({
       balance: newBalance,
       updated_at: new Date(),
     });

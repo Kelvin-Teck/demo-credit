@@ -2,8 +2,7 @@
 import { BaseModel } from "./BaseModel";
 import knex from "../database/connection";
 import { v4 as uuidv4 } from "uuid";
-import { TransactionData } from "../interfaces";
-
+import { ITransactionData } from "../interfaces";
 
 class Transaction extends BaseModel {
   protected static tableName = "transactions";
@@ -13,16 +12,28 @@ class Transaction extends BaseModel {
     return `TXN-${Date.now()}-${uuidv4().substring(0, 6).toUpperCase()}`;
   }
 
+  // static async findById(id: number, trx?: any): Promise<any> {
+  //   const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
+
+  //   const transaction = await queryBuilder.where({ id }).first();
+
+  //   return transaction
+  // }
+
   // Create transaction with generated reference
-  static async create(transactionData: TransactionData) {
+  static async create(transactionData: ITransactionData, trx?: any) {
+    const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
+
     const transaction = {
       ...transactionData,
       reference: transactionData.reference || this.generateReference(),
       status: transactionData.status || "pending",
     };
 
-    const [id] = await knex(this.tableName).insert(transaction).returning("id");
-    return this.findById(id);
+    const [insertedTransaction] = await queryBuilder
+      .insert(transaction)
+      .returning("*");
+    return insertedTransaction;
   }
 
   // Get user transactions
@@ -47,16 +58,21 @@ class Transaction extends BaseModel {
   }
 
   // Update transaction status
-  static async updateStatus(id: number, status: string, updateData = {}) {
-    await knex(this.tableName)
-      .where({ id })
-      .update({
-        status,
-        ...updateData,
-        updated_at: new Date(),
-      });
+  static async updateStatus(
+    id: number,
+    status: string,
+    updateData = {},
+    trx?: any
+  ) {
+    const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
+    await queryBuilder.where({ id }).update({
+      status,
+      ...updateData,
+      updated_at: new Date(),
+    });
 
-    return this.findById(id);
+    console.log(id);
+    return this.findById(id, trx);
   }
 
   // Get transaction by reference
