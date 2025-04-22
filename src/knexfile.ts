@@ -12,8 +12,12 @@ const config: { [key: string]: import("knex").Knex.Config } = {
       host: process.env.DB_HOST,
       port: parseInt(process.env.DB_PORT || "5432"),
       user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD as string || '',
+      password: (process.env.DB_PASSWORD as string) || "",
       database: process.env.DB_NAME,
+    },
+    migrations: {
+      tableName: "knex_migrations",
+      directory: "./database/migrations",
     },
   },
 
@@ -32,6 +36,9 @@ const config: { [key: string]: import("knex").Knex.Config } = {
       tableName: "knex_migrations",
       directory: "./src/database/migrations",
     },
+    seeds: {
+      directory: "./src/database/seeds",
+    },
   },
 
   production: {
@@ -47,7 +54,7 @@ const config: { [key: string]: import("knex").Knex.Config } = {
     },
     migrations: {
       tableName: "knex_migrations",
-      directory: "./src/database/migrations"
+      directory: "./src/database/migrations",
     },
   },
 };
