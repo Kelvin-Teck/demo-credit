@@ -29,10 +29,9 @@ class Transaction extends BaseModel {
       reference: transactionData.reference || this.generateReference(),
       status: transactionData.status || "pending",
     };
+    const query = await queryBuilder.insert(transaction);
+    const [insertedId] = trx ? query.transacting(trx) : query;
 
-    const [insertedId] = await queryBuilder
-      .insert(transaction)
-  
     return this.findById(insertedId, trx);
   }
 
@@ -45,7 +44,7 @@ class Transaction extends BaseModel {
 
   // Get wallet transactions
   static async findByWalletId(walletId: number) {
-    return knex(this.tableName)
+    return await knex(this.tableName)
       .where({ wallet_id: walletId })
       .orderBy("created_at", "desc");
   }
@@ -65,14 +64,15 @@ class Transaction extends BaseModel {
     trx?: any
   ) {
     const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
-    
-    await queryBuilder.where({ id }).update({
+
+   const query =  await queryBuilder.where({ id }).update({
       status,
       ...updateData,
       updated_at: new Date(),
-    });
-
+   });
     
+    trx ? query.transacting(trx) : query
+
     return this.findById(id, trx);
   }
 

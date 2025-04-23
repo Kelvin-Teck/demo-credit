@@ -61,7 +61,7 @@ export const fundWallet = async (req: Request) => {
 
         // Update wallet balance
         await Wallet.updateBalance(wallet.id, amount, trx);
-
+        await trx.commit();
         const currentWallet = await Wallet.findById(userId, trx);
 
         // Update Transaction Status to "completed"
@@ -97,9 +97,10 @@ export const fundWallet = async (req: Request) => {
 
         return {
           transaction: formattedTransaction,
-          wallet:formattedCurrentWallet,
+          wallet: formattedCurrentWallet,
         };
       } catch (error) {
+        trx.rollback();
         const errorMessage =
           error instanceof Error ? error.message : "an unknown error occured";
         return newError(errorMessage, 500);
@@ -131,102 +132,107 @@ export const transferFunds = async (req: Request) => {
     }
 
     // Begin Transaction
-    const result = await knex.transaction(async (trx) => {
-      // Get sender's wallet
-      const senderWallet = await Wallet.findByUserId(userId, trx);
-      if (!senderWallet) {
-        return newError("Sender's wallet not found", 404);
+    return await knex.transaction(async (trx) => {
+      try {
+        // Get sender's wallet
+        const senderWallet = await Wallet.findByUserId(userId, trx);
+        if (!senderWallet) {
+          return newError("Sender's wallet not found", 404);
+        }
+
+        // Get recipient's wallet
+        const recipientWallet = await Wallet.findOne(
+          { wallet_number: value.recipientWalletNumber },
+          trx
+        );
+
+        if (!recipientWallet) {
+          return newError("Recipient wallet not found", 404);
+        }
+
+        // Check if sender is not transferring to self
+        if (senderWallet.id === recipientWallet.id) {
+          return newError("Cannot transfer to your own wallet", 404);
+        }
+
+        // Check if sender has sufficient funds
+        if (senderWallet.balance < value.amount) {
+          return newError("Insufficient funds", 402);
+        }
+
+        // Create transaction record
+        const transactionData = {
+          userId: userId,
+          walletId: senderWallet.id,
+          amount,
+          transactionType: "transfer",
+          status: "pending",
+          sourceWalletId: senderWallet.id,
+          destinationWalletId: recipientWallet.id,
+          description: value.description || "Transfer",
+        };
+
+        const transaction = await Transaction.create(
+          convertToSnakeCase(transactionData),
+          trx
+        );
+
+        // Update sender's wallet (deduct amount)
+        await Wallet.updateBalance(senderWallet.id, -amount, trx);
+
+        // Update recipient's wallet (add amount)
+        await Wallet.updateBalance(recipientWallet.id, amount, trx);
+
+        // Update transaction status to completed
+        const updatedTransaction = await Transaction.updateStatus(
+          transaction.id,
+          "completed",
+          {},
+          trx
+        );
+
+        const formattedTransaction = {
+          ...updatedTransaction,
+          amount: parseFloat(updatedTransaction.amount),
+        };
+        // Return updated sender wallet and transaction
+        const updatedSenderWallet = await Wallet.findById(senderWallet.id, trx);
+        // Send Email Notification
+        // get recipient Name
+        const recipientInfo = await User.findById(recipientWallet.user_id, trx);
+        await trx.commit();
+        const emailData = {
+          to: user.email,
+          subject: "Transfer Notification",
+          template: "fundTransfer",
+          context: {
+            firstName: user.first_name,
+            transactionRef: formattedTransaction.reference,
+            newBalance: updatedSenderWallet.balance,
+            amount: formattedTransaction.amount,
+            recipientName: `${recipientInfo.first_name} ${recipientInfo.last_name}`,
+            recipientEmail: recipientInfo.email,
+            dashboardLink: "https://demo-credit/transactions",
+          },
+        };
+
+        await sendMail(emailData);
+
+        return {
+          status: "success",
+          message: "Transfer successful",
+          data: {
+            transaction: formattedTransaction,
+            balance: parseFloat(updatedSenderWallet.balance),
+          },
+        };
+      } catch (error) {
+        await trx.rollback();
+        const errorMessage =
+          error instanceof Error ? error.message : "an unknown error occured";
+        return newError(errorMessage, 500);
       }
-
-      // Get recipient's wallet
-      const recipientWallet = await Wallet.findOne(
-        { wallet_number: value.recipientWalletNumber },
-        trx
-      );
-
-      if (!recipientWallet) {
-        return newError("Recipient wallet not found", 404);
-      }
-
-      // Check if sender is not transferring to self
-      if (senderWallet.id === recipientWallet.id) {
-        return newError("Cannot transfer to your own wallet", 404);
-      }
-
-      // Check if sender has sufficient funds
-      if (senderWallet.balance < value.amount) {
-        return newError("Insufficient funds", 402);
-      }
-
-      // Create transaction record
-      const transactionData = {
-        userId: userId,
-        walletId: senderWallet.id,
-        amount,
-        transactionType: "transfer",
-        status: "pending",
-        sourceWalletId: senderWallet.id,
-        destinationWalletId: recipientWallet.id,
-        description: value.description || "Transfer",
-      };
-
-      const transaction = await Transaction.create(
-        convertToSnakeCase(transactionData),
-        trx
-      );
-
-      // Update sender's wallet (deduct amount)
-      await Wallet.updateBalance(senderWallet.id, -amount, trx);
-
-      // Update recipient's wallet (add amount)
-      await Wallet.updateBalance(recipientWallet.id, amount, trx);
-
-      // Update transaction status to completed
-      const updatedTransaction = await Transaction.updateStatus(
-        transaction.id,
-        "completed",
-        {},
-        trx
-      );
-
-      const formattedTransaction = {
-        ...updatedTransaction,
-        amount: parseFloat(updatedTransaction.amount),
-      };
-      // Return updated sender wallet and transaction
-      const updatedSenderWallet = await Wallet.findById(senderWallet.id, trx);
-      // Send Email Notification
-      // get recipient Name
-      const recipientInfo = await User.findById(recipientWallet.user_id, trx);
-
-      const emailData = {
-        to: user.email,
-        subject: "Transfer Notification",
-        template: "fundTransfer",
-        context: {
-          firstName: user.first_name,
-          transactionRef: formattedTransaction.reference,
-          newBalance: updatedSenderWallet.balance,
-          amount: formattedTransaction.amount,
-          recipientName: `${recipientInfo.first_name} ${recipientInfo.last_name}`,
-          recipientEmail: recipientInfo.email,
-          dashboardLink: "https://demo-credit/transactions",
-        },
-      };
-
-      await sendMail(emailData);
-
-      return {
-        status: "success",
-        message: "Transfer successful",
-        data: {
-          transaction: formattedTransaction,
-          balance: parseFloat(updatedSenderWallet.balance),
-        },
-      };
     });
-
-    return result;
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "an unknown error occured";
@@ -299,7 +305,7 @@ export const withdrawFunds = async (req: Request) => {
           {},
           trx
         );
-
+        await trx.commit();
         const formattedTransaction = {
           ...updatedTransaction,
           amount: parseFloat(updatedTransaction.amount),
@@ -325,6 +331,7 @@ export const withdrawFunds = async (req: Request) => {
           newBalance: parseFloat(currentWallet.balance),
         };
       } catch (error) {
+        await trx.rollback();
         const errorMessage =
           error instanceof Error ? error.message : "an unknown error occured";
         return newError(errorMessage, 500);

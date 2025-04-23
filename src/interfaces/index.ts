@@ -1,3 +1,5 @@
+import { Knex } from "knex";
+
 export interface IUserData {
   id?: number;
   firstName: string;
@@ -136,3 +138,13 @@ export interface IMailData<T> {
   template: string;
   context: T;
 }
+
+// Pool Monitoring
+export interface IPoolStats {
+  name: string;
+  size: number;
+  available: number;
+  pending: number;
+  max: number;
+}
+

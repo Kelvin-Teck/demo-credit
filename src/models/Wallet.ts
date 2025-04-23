@@ -24,8 +24,8 @@ class Wallet extends BaseModel {
         status: walletData.status || "active",
       };
       const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
-      const [walletInserted] = await queryBuilder.insert(wallet).returning("*");
-
+      const query = await queryBuilder.insert(wallet).returning("*");
+      const [walletInserted] = trx ? query.transacting(trx) : query;
       return walletInserted;
     } catch (error) {
       console.error("Error creating wallet:", error);
@@ -36,12 +36,16 @@ class Wallet extends BaseModel {
   // Get wallet by user id
   static async findByUserId(userId: number, trx?: any) {
     const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
-    return queryBuilder.where({ user_id: userId }).first();
+    const query = await queryBuilder.where({ user_id: userId }).first();
+
+    return trx ? query.transacting(trx) : query;
   }
 
   static async findOne(filter: object, trx?: any) {
     const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
-    return queryBuilder.where(filter).first();
+    const query = await queryBuilder.where(filter).first();
+
+    return trx ? query.transacting(trx) : query;
   }
 
   // Update wallet balance
@@ -61,11 +65,12 @@ class Wallet extends BaseModel {
     //   updated_at: new Date(),
     // });
     // Perform the update and return the updated record in one query (MySQL supported)
-    await queryBuilder.where({ id }).update({
+    const query = await queryBuilder.where({ id }).update({
       balance: newBalance,
       updated_at: knex.fn.now(), // Use knex's now() for database-agnostic timestamps
     });
 
+    trx ? query.transacting(trx) : query  
     const updatedWallet = await this.findById(id);
 
     return updatedWallet;

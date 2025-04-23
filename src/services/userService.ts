@@ -76,21 +76,20 @@ export const createUser = async (req: Request) => {
   console.log(isBlacklisted.data);
 
   /* Begin Transaction */
+
+  // Hash Password
+  const hashPassword = await helpers.hashPassword(validatedUserInput.password);
+
+  //  commit user into the user Table
+  /* mapping to camelCase for storing in the db */
+
+  const dataToCommit = convertToSnakeCase({
+    ...validatedUserInput,
+    password: hashPassword,
+  });
+
   return await knex.transaction(async (trx) => {
     try {
-      // Hash Password
-      const hashPassword = await helpers.hashPassword(
-        validatedUserInput.password
-      );
-
-      //  commit user into the user Table
-      /* mapping to camelCase for storing in the db */
-
-      const dataToCommit = convertToSnakeCase({
-        ...validatedUserInput,
-        password: hashPassword,
-      });
-
       const newUser = await User.create(dataToCommit, trx);
 
       // create wallet for user (with 0 balance)
@@ -100,6 +99,8 @@ export const createUser = async (req: Request) => {
       });
 
       await Wallet.create(walletData, trx);
+      await trx.commit();
+
 
       // Send email Notification
       const emailData = {
@@ -113,6 +114,7 @@ export const createUser = async (req: Request) => {
       };
       await sendMail(emailData);
     } catch (error) {
+      await trx.rollback();
       console.log(error);
       return newError("Failed to Create User", 403);
     }

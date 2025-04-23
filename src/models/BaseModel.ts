@@ -8,7 +8,10 @@ export abstract class BaseModel {
   // Basic CRUD operations
   static async findById(id: number, trx?: any) {
     const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
-    return queryBuilder.where({ id }).first();
+    const query = queryBuilder.where({ id }).first();
+
+    // If a transaction is provided, use .transacting()
+    return trx ? query.transacting(trx) : query;
   }
   static async findOne(filter: object) {
     return knex(this.tableName).where(filter).first();
@@ -20,7 +23,8 @@ export abstract class BaseModel {
 
   static async create(data: object, trx?: any) {
     const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
-    const [id] = await queryBuilder.insert(data).returning("id");
+    const query = await queryBuilder.insert(data).returning("id");
+    const [id] = await trx ? query.transacting(trx) : query;
     return this.findById(id, trx);
   }
 
