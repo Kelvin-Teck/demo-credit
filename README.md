@@ -33,8 +33,7 @@
 git clone https://github.com/Kelvin-Teck/demo-credit.git
 cd demo-credit
 npm install
-
-
+```
 
 ### Environment Variables
 
@@ -47,3 +46,4 @@ PORT=5000
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
 REDIS_URL=your_redis_url
+```
