@@ -9,6 +9,12 @@
 
 ## ✨ Features 
 
+- [x] CRUD operations for user and wallet
+- [x] Authentication & Authorization (Faux)
+- [x] Input validation (Joi)
+- [x] MySQL integration
+- [x] Rate limiting and logging
+
 ## 🔧 Tech Stack
 
 - **Node.js**
@@ -78,4 +84,16 @@ npm run dev
 ```
 The server should now be running on http://localhost:`your_specified_port`
 
+## Database ER Design 
 
+## API Reference
+
+## Project Structure
+
+## Testing 
+
+## Contributing
+
+## License
+
+## Author / Acknowledgements
