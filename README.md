@@ -99,6 +99,9 @@ demo-credit/
 ├── src/
 │   ├── config/            # Database and environment configurations
 │   ├── controllers/       # Route handlers for each feature (e.g., auth, wallet)
+|   |-- database/          # Database Folder
+|   |   |-- migrations/    # Database migrations files
+|   |-- interfaces/        # TypeScript interface definitions 
 │   ├── middlewares/       # Custom middleware (e.g., auth, error handler)
 │   ├── models/            # Knex models and queries
 │   ├── routes/            # API route definitions
@@ -107,7 +110,7 @@ demo-credit/
 │   ├── types/             # TypeScript type definitions
 │   └── index.ts           # Application entry point
 │
-|--
+|
 ├── .env                   # Environment variable definitions
 ├── .gitignore             # Git ignored files
 ├── knexfile.ts            # Knex configuration
@@ -118,8 +121,43 @@ demo-credit/
 
 
 ```
-## Testing 
+## 🧪 Testing 
 
+Ensure you’ve set up your test environment before running tests.
+
+### 🔧 Setup
+Install testing dependencies (if you haven’t already):
+
+```bash
+npm install --save-dev jest ts-jest @types/jest supertest
+```
+Add a test script to your package.json:
+
+```json
+"scripts": {
+  "test": "jest"
+}
+```
+### 🧪 Running Tests
+
+```bash
+npm run test
+```
+
+Tests are usually placed in a __tests__/ directory and follow this structure:
+
+```markdown
+__tests__/
+├── userController.spec.ts
+├── walletController.spec.ts
+├── userService.spec.ts
+├── walletService.spec.ts
+└── utils/
+    └── apiResponse.spec.ts
+    └── caseConverter.spec.ts
+    └── helpers.spec.ts
+    └── validator.spec.ts
+```
 ## Contributing
 
 ## License
