@@ -52,7 +52,7 @@ Create a .env file in the root directory with the following:
 ```env
 NODE_ENV=<current_environment> # development or production
 PORT=<your_specified_port> 
-DB_HOST=<database_host> # if in development - <localhost> production - <your_remote_databse_host>
+DB_HOST=<database_host> # if in development - <localhost> in production - <your_remote_databse_host>
 DB_PORT=<your_database_port> # if in development defaults - 3306, production - <your_remote_database_port> 
 DB_USER=<your_database_user>
 DB_PASSWORD=<your_database_password>
@@ -68,7 +68,7 @@ ADJUTOR_API_KEY=<your_api_key>
 Make sure your MySQL server is running and the database `your_database_name` exists. You can create it with:
 
 ```sql
-CREATE DATABASE demo_credit;
+CREATE DATABASE <your_database_name>;
 ```
 
 ### 4. Running Database Migrations
@@ -86,10 +86,38 @@ The server should now be running on http://localhost:`your_specified_port`
 
 ## Database ER Design 
 
-## API Reference
+## 📬 API Reference
 
-## Project Structure
+You can explore and test all endpoints using our Postman documentation:
 
+👉 [Demo-Credit API Postman Docs](https://documenter.getpostman.com/view/30059286/2sB2ixjE3E)
+
+## 🗂️ Project Structure
+
+```bash
+demo-credit/
+├── src/
+│   ├── config/            # Database and environment configurations
+│   ├── controllers/       # Route handlers for each feature (e.g., auth, wallet)
+│   ├── middlewares/       # Custom middleware (e.g., auth, error handler)
+│   ├── models/            # Knex models and queries
+│   ├── routes/            # API route definitions
+│   ├── services/          # Business logic and integrations (e.g., blacklist check)
+│   ├── utils/             # Helper functions (e.g., formatters, validators)
+│   ├── types/             # TypeScript type definitions
+│   └── index.ts           # Application entry point
+│
+|--
+├── .env                   # Environment variable definitions
+├── .gitignore             # Git ignored files
+├── knexfile.ts            # Knex configuration
+├── package-lock.json          
+|-- package.json           # Project metadata and scripts
+├── tsconfig.json          # TypeScript compiler configuration
+└── README.md              # Project documentation
+
+
+```
 ## Testing 
 
 ## Contributing
