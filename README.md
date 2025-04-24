@@ -84,7 +84,14 @@ npm run dev
 ```
 The server should now be running on http://localhost:`your_specified_port`
 
-## Database ER Design 
+## Database Design (ER Diagram)
+
+
+Below is the Entity Relationship (ER) diagram representing the database schema for the Demo-Credit application:
+
+![Demo-Credit ER Diagram](./demo-credit-erd_1.png)
+
+> This diagram illustrates the relationships between users, wallets, transactions, and other core entities in the system.
 
 ## 📬 API Reference
 
@@ -146,7 +153,7 @@ npm run test
 
 Tests are usually placed in a __tests__/ directory and follow this structure:
 
-```markdown
+```
 __tests__/
 ├── userController.spec.ts
 ├── walletController.spec.ts
@@ -199,6 +206,7 @@ See the [MIT License](https://opensource.org/licenses/MIT) for more information.
 
 ## Author / Acknowledgements
 👤 **Author**
+
 Eneh Kelvin Chukwuemeka
 Developer & Maintainer of Demo-Credit
 [GitHub](https://github.com/Kelvin-Teck)
@@ -206,6 +214,7 @@ Developer & Maintainer of Demo-Credit
 Built with ❤️ using Node.js, TypeScript, and MySQL.
 
 **🙌 Acknowledgements**
+
 A Big Thanks to Lendsqr for the Adjutor Karma API for blacklist verification.
 
 Inspired by modern fintech wallet systems and micro-lending architectures.
