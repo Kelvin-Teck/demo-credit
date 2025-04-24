@@ -30,6 +30,20 @@
 ### Installation
 
 ```bash
-git clone https://github.com/your-username/your-project.git
-cd your-project
+git clone https://github.com/Kelvin-Teck/demo-credit.git
+cd demo-credit
 npm install
+
+
+
+### Environment Variables
+
+Create a .env file in the root directory:
+
+```.env
+Copy
+Edit
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+REDIS_URL=your_redis_url
