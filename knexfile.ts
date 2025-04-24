@@ -26,19 +26,7 @@ const config: { [key: string]: Knex.Config } = {
       directory: "./src/database/seeds",
     },
   },
-  test: {
-    client: "sqlite3", // simpler in test env
-    connection: {
-      filename: ":memory:", // in-memory DB for tests
-    },
-    useNullAsDefault: true, // Important for SQLite
-    migrations: {
-      directory: "./src/database/migrations",
-    },
-    seeds: {
-      directory: "./src/database/seeds",
-    },
-  },
+
   production: {
     client: "mysql2",
     connection: {
