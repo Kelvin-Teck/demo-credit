@@ -82,9 +82,9 @@ This will set up your tables using Knex.
 ```bash
 npm run dev
 ```
-The server should now be running on http://localhost:`your_specified_port`
+The server should now be running on `http://localhost:<your_specified_port>`
 
-## Database Design (ER Diagram)
+## 💽 Database Design (ER Diagram)
 
 
 Below is the Entity Relationship (ER) diagram representing the database schema for the Demo-Credit application:
