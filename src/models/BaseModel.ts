@@ -13,8 +13,12 @@ export abstract class BaseModel {
     // If a transaction is provided, use .transacting()
     return trx ? query.transacting(trx) : query;
   }
-  static async findOne(filter: object) {
-    return knex(this.tableName).where(filter).first();
+  static async findOne(filter: object, trx:any) {
+    const queryBuilder = trx ? trx(this.tableName).transacting(trx) : knex(this.tableName)
+    
+    const query = queryBuilder.where(filter).first();
+    
+    return query
   }
 
   static async findAll(filter = {}) {

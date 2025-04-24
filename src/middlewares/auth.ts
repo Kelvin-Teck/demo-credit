@@ -55,7 +55,7 @@ export const fauxAuth = (requiredRole?: string) : RequestHandler=> {
     } catch (error) {
        const errorMessage =
          error instanceof Error ? error.message : "an unknown error occured";
-       return newError(errorMessage, 500);
+      throw new Error(errorMessage)
     }
   };
 };

@@ -20,12 +20,12 @@ class User extends BaseModel {
   // Create a user
   static async create(userData: IUserData, trx?: any) {
     // Use the transaction if provided
-    const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
+    const queryBuilder = trx ? trx(this.tableName).transacting(trx) : knex(this.tableName);
 
     // Create user with hashed password (assuming password is already hashed)
-    const query = await queryBuilder.insert({ ...userData });
+    const [insertId] =  await queryBuilder.insert({ ...userData });
 
-    const [insertId] = trx ? query.transacting(trx) : query;
+    
 
     return this.findById(insertId, trx);
   }

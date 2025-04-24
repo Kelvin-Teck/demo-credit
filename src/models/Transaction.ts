@@ -22,7 +22,9 @@ class Transaction extends BaseModel {
 
   // Create transaction with generated reference
   static async create(transactionData: ITransactionData, trx?: any) {
-    const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
+    const queryBuilder = trx
+      ? trx(this.tableName).transacting(trx)
+      : knex(this.tableName);
 
     const transaction = {
       ...transactionData,
@@ -30,7 +32,7 @@ class Transaction extends BaseModel {
       status: transactionData.status || "pending",
     };
     const query = await queryBuilder.insert(transaction);
-    const [insertedId] = trx ? query.transacting(trx) : query;
+    const [insertedId] = query;
 
     return this.findById(insertedId, trx);
   }
@@ -63,17 +65,16 @@ class Transaction extends BaseModel {
     updateData = {},
     trx?: any
   ) {
-    const queryBuilder = trx ? trx(this.tableName) : knex(this.tableName);
+    const queryBuilder = trx ? trx(this.tableName).transacting(trx) : knex(this.tableName);
 
-   const query =  await queryBuilder.where({ id }).update({
+    await queryBuilder.where({ id }).update({
       status,
       ...updateData,
       updated_at: new Date(),
    });
     
-    trx ? query.transacting(trx) : query
-
-    return this.findById(id, trx);
+    
+    return await this.findById(id, trx);
   }
 
   // Get transaction by reference

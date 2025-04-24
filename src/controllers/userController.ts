@@ -11,12 +11,14 @@ export const createUser = async (
 
     res.status(200).json(sendSuccess("User Created Succesfully", response));
   } catch (error) {
+
     const status =
       error instanceof Error && "code" in error ? (error as any).code : 500;
+    console.log(status)
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occured";
     // const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    res.status(status).json(sendError(errorMessage, status));
+    res.status(500).json(sendError(errorMessage, status));
   }
 };
 

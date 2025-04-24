@@ -6,7 +6,7 @@ import { newError } from "../utils/apiResponse";
 import * as validator from "../utils/validator";
 import { convertToSnakeCase } from "../utils/caseConverter";
 import { Request } from "express";
-import { IAuthUser, IUserData } from "../interfaces";
+import { IAuthUser, ITransactionData, IUserData } from "../interfaces";
 import User from "../models/User";
 import { sendMail } from "../mailers";
 
@@ -15,7 +15,7 @@ export const fundWallet = async (req: Request) => {
     const { user } = req as Request & { user: IAuthUser }; // Get Authenticated user
     const userId = user.id;
     const { amount, paymentMethod, paymentDetails } = req.body;
-
+    console.log(userId);
     // Validate input
     const { error, value } = validator.validateWalletFunding({
       amount,
@@ -31,29 +31,29 @@ export const fundWallet = async (req: Request) => {
       return newError("Amount must be greater than zero", 400);
     }
 
+    // Get user wallet
+    const wallet = await Wallet.findByUserId(userId);
+
+    if (!wallet) {
+      return newError("Wallet not found", 404);
+    }
+
+    // Create transaction record
+    const transactionData = {
+      userId: userId,
+      walletId: wallet.id,
+      amount: value.amount,
+      transactionType: "deposit",
+      paymentMethod: value.paymentMethod,
+      paymentDetails,
+      description: "Wallet funding",
+    };
+
     // process the funding
 
     /* Begin Transaction */
     return await knex.transaction(async (trx) => {
       try {
-        // Get user wallet
-        const wallet = await Wallet.findByUserId(userId, trx);
-
-        if (!wallet) {
-          return newError("Wallet not found", 404);
-        }
-
-        // Create transaction record
-        const transactionData = {
-          userId: userId,
-          walletId: wallet.id,
-          amount: value.amount,
-          transactionType: "deposit",
-          paymentMethod: value.paymentMethod,
-          paymentDetails,
-          description: "Wallet funding",
-        };
-
         const transaction = await Transaction.create(
           convertToSnakeCase(transactionData),
           trx
@@ -61,8 +61,8 @@ export const fundWallet = async (req: Request) => {
 
         // Update wallet balance
         await Wallet.updateBalance(wallet.id, amount, trx);
-        await trx.commit();
-        const currentWallet = await Wallet.findById(userId, trx);
+
+        const currentWallet = await Wallet.findByUserId(user.id, trx);
 
         // Update Transaction Status to "completed"
 
@@ -78,8 +78,9 @@ export const fundWallet = async (req: Request) => {
         };
         const formattedCurrentWallet = {
           ...currentWallet,
-          balance: currentWallet.balance,
+          balance: parseFloat(currentWallet.balance),
         };
+
         // Send Email Notification
         const emailData = {
           to: user.email,
@@ -100,7 +101,6 @@ export const fundWallet = async (req: Request) => {
           wallet: formattedCurrentWallet,
         };
       } catch (error) {
-        trx.rollback();
         const errorMessage =
           error instanceof Error ? error.message : "an unknown error occured";
         return newError(errorMessage, 500);
@@ -128,115 +128,104 @@ export const transferFunds = async (req: Request) => {
 
     if (error) {
       const errorMessage = error.details.map((err) => err.message).join(", ");
-      return newError(errorMessage, 403);
+      throw Error(errorMessage);
     }
+
+    // Get sender's wallet
+    const senderWallet = await Wallet.findByUserId(userId);
+    if (!senderWallet) {
+      throw Error("Sender's wallet not found");
+    }
+
+    // Get recipient's wallet
+    const recipientWallet = await Wallet.findOne({
+      wallet_number: value.recipientWalletNumber,
+    });
+
+    if (!recipientWallet) {
+      throw Error("Recipient wallet not found");
+    }
+
+    // Check if sender is not transferring to self
+    if (senderWallet.id === recipientWallet.id) {
+      throw Error("You Cannot transfer to your own wallet");
+    }
+
+    // Check if sender has sufficient funds
+    if (senderWallet.balance < value.amount) {
+      throw Error("Insufficient funds");
+    }
+
+    // Create transaction record
+    const transactionData = {
+      userId: userId,
+      walletId: senderWallet.id,
+      amount,
+      transactionType: "transfer",
+      status: "pending",
+      sourceWalletId: senderWallet.id,
+      destinationWalletId: recipientWallet.id,
+      description: value.description || "Transfer",
+    };
+
+    const transaction = await Transaction.create(
+      convertToSnakeCase(transactionData)
+    );
 
     // Begin Transaction
     return await knex.transaction(async (trx) => {
-      try {
-        // Get sender's wallet
-        const senderWallet = await Wallet.findByUserId(userId, trx);
-        if (!senderWallet) {
-          return newError("Sender's wallet not found", 404);
-        }
+      // Update sender's wallet (deduct amount)
+      await Wallet.updateBalance(senderWallet.id, -amount, trx);
 
-        // Get recipient's wallet
-        const recipientWallet = await Wallet.findOne(
-          { wallet_number: value.recipientWalletNumber },
-          trx
-        );
+      // Update recipient's wallet (add amount)
+      await Wallet.updateBalance(recipientWallet.id, amount, trx);
 
-        if (!recipientWallet) {
-          return newError("Recipient wallet not found", 404);
-        }
+      // Update transaction status to completed
+      const updatedTransaction = await Transaction.updateStatus(
+        transaction.id,
+        "completed",
+        {},
+        trx
+      );
 
-        // Check if sender is not transferring to self
-        if (senderWallet.id === recipientWallet.id) {
-          return newError("Cannot transfer to your own wallet", 404);
-        }
+      // Return updated sender wallet and transaction
+      const updatedSenderWallet = await Wallet.findById(senderWallet.id, trx);
 
-        // Check if sender has sufficient funds
-        if (senderWallet.balance < value.amount) {
-          return newError("Insufficient funds", 402);
-        }
+      const formattedTransaction = {
+        ...updatedTransaction,
+        amount: parseFloat(updatedTransaction.amount),
+      };
 
-        // Create transaction record
-        const transactionData = {
-          userId: userId,
-          walletId: senderWallet.id,
-          amount,
-          transactionType: "transfer",
-          status: "pending",
-          sourceWalletId: senderWallet.id,
-          destinationWalletId: recipientWallet.id,
-          description: value.description || "Transfer",
-        };
+      const recipientInfo = await User.findById(recipientWallet.user_id);
 
-        const transaction = await Transaction.create(
-          convertToSnakeCase(transactionData),
-          trx
-        );
+      const emailData = {
+        to: user.email,
+        subject: "Transfer Notification",
+        template: "fundTransfer",
+        context: {
+          firstName: user.first_name,
+          transactionRef: formattedTransaction.reference,
+          newBalance: updatedSenderWallet.balance,
+          amount: formattedTransaction.amount,
+          recipientName: `${recipientInfo.first_name} ${recipientInfo.last_name}`,
+          recipientEmail: recipientInfo.email,
+          dashboardLink: "https://demo-credit/transaction",
+        },
+      };
 
-        // Update sender's wallet (deduct amount)
-        await Wallet.updateBalance(senderWallet.id, -amount, trx);
+      await sendMail(emailData);
 
-        // Update recipient's wallet (add amount)
-        await Wallet.updateBalance(recipientWallet.id, amount, trx);
-
-        // Update transaction status to completed
-        const updatedTransaction = await Transaction.updateStatus(
-          transaction.id,
-          "completed",
-          {},
-          trx
-        );
-
-        const formattedTransaction = {
-          ...updatedTransaction,
-          amount: parseFloat(updatedTransaction.amount),
-        };
-        // Return updated sender wallet and transaction
-        const updatedSenderWallet = await Wallet.findById(senderWallet.id, trx);
-        // Send Email Notification
-        // get recipient Name
-        const recipientInfo = await User.findById(recipientWallet.user_id, trx);
-        await trx.commit();
-        const emailData = {
-          to: user.email,
-          subject: "Transfer Notification",
-          template: "fundTransfer",
-          context: {
-            firstName: user.first_name,
-            transactionRef: formattedTransaction.reference,
-            newBalance: updatedSenderWallet.balance,
-            amount: formattedTransaction.amount,
-            recipientName: `${recipientInfo.first_name} ${recipientInfo.last_name}`,
-            recipientEmail: recipientInfo.email,
-            dashboardLink: "https://demo-credit/transactions",
-          },
-        };
-
-        await sendMail(emailData);
-
-        return {
-          status: "success",
-          message: "Transfer successful",
-          data: {
-            transaction: formattedTransaction,
-            balance: parseFloat(updatedSenderWallet.balance),
-          },
-        };
-      } catch (error) {
-        await trx.rollback();
-        const errorMessage =
-          error instanceof Error ? error.message : "an unknown error occured";
-        return newError(errorMessage, 500);
-      }
+      return {
+        status: "success",
+        message: "Transfer successful",
+        data: {
+          transaction: formattedTransaction,
+          balance: parseFloat(updatedSenderWallet.balance),
+        },
+      };
     });
-  } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "an unknown error occured";
-    return newError(errorMessage, 500);
+  } catch (error: any) {
+    throw Error(error!.message ?? "an unknown error occured");
   }
 };
 
@@ -273,22 +262,21 @@ export const withdrawFunds = async (req: Request) => {
     if (wallet.balance < amount) {
       return newError("Insufficient funds in wallet", 402);
     }
+    // Create transaction record
+    const transactionData = convertToSnakeCase({
+      userId,
+      walletId: wallet.id,
+      amount,
+      transactionType: "withdrawal",
+      status: "pending",
+      paymentMethod: value.paymentMethod,
+      paymentDetails: value.bankDetails,
+      description: `Withdrawal of ${amount} from wallet`,
+    });
 
     // Begin transaction
     return await knex.transaction(async (trx) => {
       try {
-        // Create transaction record
-        const transactionData = convertToSnakeCase({
-          userId,
-          walletId: wallet.id,
-          amount,
-          transactionType: "withdrawal",
-          status: "pending",
-          paymentMethod: value.paymentMethod,
-          paymentDetails: value.bankDetails,
-          description: `Withdrawal of ${amount} from wallet`,
-        });
-
         const transaction = await Transaction.create(transactionData, trx);
 
         // Update wallet balance
@@ -305,7 +293,7 @@ export const withdrawFunds = async (req: Request) => {
           {},
           trx
         );
-        await trx.commit();
+
         const formattedTransaction = {
           ...updatedTransaction,
           amount: parseFloat(updatedTransaction.amount),
@@ -331,7 +319,6 @@ export const withdrawFunds = async (req: Request) => {
           newBalance: parseFloat(currentWallet.balance),
         };
       } catch (error) {
-        await trx.rollback();
         const errorMessage =
           error instanceof Error ? error.message : "an unknown error occured";
         return newError(errorMessage, 500);

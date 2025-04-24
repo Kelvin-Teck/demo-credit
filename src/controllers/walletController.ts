@@ -15,6 +15,7 @@ export const fundWallet = async (
       error instanceof Error && "code" in error ? (error as any).code : 500;
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occured";
+    console.log(errorMessage)
     // const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     res.status(status).json(sendError(errorMessage, status));
   }
@@ -27,7 +28,8 @@ export const transferFunds = async (
   try {
     const response = await WalletService.transferFunds(req);
 
-    res.status(200).json(sendSuccess("Funds Transferred Succesfully", response));
+    res.status(200).json(response
+    );
   } catch (error) {
     const status =
       error instanceof Error && "code" in error ? (error as any).code : 500;
