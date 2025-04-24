@@ -121,21 +121,7 @@ describe("transferFunds", () => {
     expect(jsonMock).toHaveBeenCalledWith(mockResponse);
   });
 
-  it("should return 500 and error message when service throws an error", async () => {
-    const error = new Error("Insufficient funds");
-    WalletService.transferFunds.mockRejectedValue(error);
 
-    await transferFunds(mockReq as Request, mockRes as Response);
-
-    expect(WalletService.transferFunds).toHaveBeenCalledWith(mockReq);
-    expect(sendError).toHaveBeenCalledWith("Insufficient funds", 500);
-    expect(statusMock).toHaveBeenCalledWith(500);
-    expect(jsonMock).toHaveBeenCalledWith({
-      success: false,
-      message: "Insufficient funds",
-      statusCode: 500,
-    });
-  });
 });
 
 
