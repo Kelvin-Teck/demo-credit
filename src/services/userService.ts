@@ -73,7 +73,7 @@ export const createUser = async (req: Request) => {
     `/verification/karma/${validatedUserInput.email}`
   );
 
-  console.log(isBlacklisted.data);
+  /* If User is blacklisted return an error */
 
   /* Begin Transaction */
   return await knex.transaction(async (trx) => {
@@ -91,7 +91,6 @@ export const createUser = async (req: Request) => {
         password: hashPassword,
       });
 
-      
       const newUser = await User.create(dataToCommit, trx);
 
       // create wallet for user (with 0 balance)
@@ -101,7 +100,7 @@ export const createUser = async (req: Request) => {
       });
 
       await Wallet.create(walletData, trx);
-      await trx.commit();
+      
       // Send email Notification
       const emailData = {
         to: newUser.email,
@@ -114,7 +113,7 @@ export const createUser = async (req: Request) => {
       };
       await sendMail(emailData);
     } catch (error) {
-      await trx.rollback();
+      
       console.log(error);
       return newError("Failed to Create User", 403);
     }
