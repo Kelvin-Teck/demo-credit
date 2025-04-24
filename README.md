@@ -158,8 +158,56 @@ __tests__/
     └── helpers.spec.ts
     └── validator.spec.ts
 ```
-## Contributing
+## 🤝 Contributing
 
-## License
+Contributions are welcome and appreciated! Here’s how you can help:
+
+### 🚀 Getting Started
+
+1. Fork the repo
+
+2. Clone the repo
+
+3. Create your feature branch
+
+```bash
+git checkout -b feature/your-feature-name
+```
+4. make your changes and Commit your changes
+
+```bash
+git commit -m "Add your feature description"
+```
+5. Push to the branch 
+
+```bash
+git push origin feature/your-feature-name
+```
+6. Open a **Pull Request** with a clear description of your changes
+
+✅ **Guidelines**
+- Follow consistent code formatting (TypeScript best practices).
+
+- Add comments and update documentation if needed.
+
+- Write or update tests when adding features or fixing bugs.
+
+## 🪪 License
+This project is licensed under the **MIT License**.  
+See the [MIT License](https://opensource.org/licenses/MIT) for more information.
+
 
 ## Author / Acknowledgements
+👤 **Author**
+Eneh Kelvin Chukwuemeka
+Developer & Maintainer of Demo-Credit
+[GitHub](https://github.com/Kelvin-Teck)
+
+Built with ❤️ using Node.js, TypeScript, and MySQL.
+
+**🙌 Acknowledgements**
+A Big Thanks to Lendsqr for the Adjutor Karma API for blacklist verification.
+
+Inspired by modern fintech wallet systems and micro-lending architectures.
+
+Special shout-out to the open-source community for continuous inspiration.
